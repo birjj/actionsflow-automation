@@ -1,7 +1,7 @@
 on:
   "inges_kattehjem":
     config:
-      debug: true
+      debug: false
       every: "0 14 * * *"
     tags:
     - Indekat
@@ -10,11 +10,6 @@ jobs:
     name: Print
     runs-on: ubuntu-latest
     steps:
-      - name: Print Outputs
-        env:
-          outputs: ${{ toJSON(on.inges_kattehjem.outputs) }}
-        run: |
-          echo Output: $outputs
       - name: Send to Discord
         uses: actionsflow/axios@main
         with:
