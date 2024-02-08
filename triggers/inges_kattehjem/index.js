@@ -1,6 +1,6 @@
 const { load } = require("cheerio");
 
-/** @typedef {{ name: string; description: string; tags: string[]; isSold: boolean; link: string }} Cat */
+/** @typedef {{ name: string; description: string; tags: string[]; isSold: boolean; link: string; imageUrl: string; }} Cat */
 /** @typedef {Cat & { ageInMonths: number }} AgedCat */
 
 /**
@@ -22,6 +22,7 @@ module.exports = class IngesKattehjemTrigger {
     this.log = helpers.log;
     this.axios = helpers.axios;
     this.createContentDigest = helpers.createContentDigest;
+    this.log.debug("Got options", this.options);
   }
   
   getItemKey(/** @type {AgedCat} */ cat) {
@@ -65,8 +66,9 @@ module.exports = class IngesKattehjemTrigger {
       const description = $cat.find(".cat-text").text();
       const isSold = $cat.find(".sold").length > 0;
       const link = $cat.find("a.btn").attr("href");
+      const imageUrl = $cat.find(".cat-inner img").attr("src");
       /** @type {Cat} */
-      const outp = { name, description, tags, isSold, link };
+      const outp = { name, description, tags, isSold, link, imageUrl };
       return outp;
     });
   }
@@ -115,7 +117,10 @@ module.exports = class IngesKattehjemTrigger {
       cats = cats.filter(cat => cat.ageInMonths <= minAgeInMonths);
     }
     if (tags && tags.length) {
-      cats = cats.filter(cat => tags.every(tag => cat.tags.includes(tag)));
+      cats = cats.filter(cat => {
+        const lowercasedCatTags = cat.tags.map(t => t.toLowerCase());
+        return tags.every(tag => lowercasedCatTags.includes(tag.toLowerCase()));
+      });
     }
     return cats;
   }
