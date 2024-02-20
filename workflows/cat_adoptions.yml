@@ -2,7 +2,7 @@ on:
   "inges_kattehjem":
     config:
       debug: false
-      every: "0 14 * * *"
+      every: "0 */2 * * *"
     tags:
     - Indekat
 jobs:
