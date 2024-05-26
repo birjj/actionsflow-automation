@@ -2,6 +2,7 @@ on:
   "inges_kattehjem":
     config:
       debug: false
+      active: false
       every: "0 8,10,12,14 * * *"
     tags:
     - Indekat
