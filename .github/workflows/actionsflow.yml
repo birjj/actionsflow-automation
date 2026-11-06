@@ -26,15 +26,17 @@ jobs:
     name: Run
     concurrency: actionsflow
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Run Actionsflow
-        uses: actionsflow/actionsflow-action@v1.3.0
+        uses: actionsflow/actionsflow-action@877881186c58832926cbd76fb5674561749f7256 # v1.3.0
         with:
           using: "local"
           args: "build --include ${{ github.event.inputs.include || ''}} -f ${{github.event.inputs.force=='true' && 'true' || 'false'}} --verbose ${{github.event.inputs.verbose=='true' && 'true' || 'false'}}"
           json-secrets: ${{ toJSON(secrets) }}
           json-github: ${{ toJSON(github) }}
       - name: Setup act
-        uses: actionsflow/setup-act-for-actionsflow@v1.2.0
+        uses: actionsflow/setup-act-for-actionsflow@0787a1ed8fbf11c9dc5e5a5d56fac61eff076669 # v1.2.0
       - name: Run act
         run: act --workflows ./dist/workflows --secret-file ./dist/.secrets --eventpath ./dist/event.json --env-file ./dist/.env -P ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-latest
