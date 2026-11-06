@@ -1,0 +1,25 @@
+on:
+  "sundheddk_doctoraccess":
+    config:
+      debug: false
+      active: true
+      every: "0 8,16 * * *"
+    doctorIds: [2756]
+jobs:
+  print:
+    name: Print
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send to Discord
+        uses: actionsflow/axios@main
+        with:
+          url: ${{ secrets.CATS_DISCORD_WEBHOOK }}
+          method: POST
+          body: |
+            {
+              "embeds": [{
+                "title": ${{ toJSON(on.sundheddk_doctoraccess.outputs.title) }},
+                "description": ${{ toJSON(on.sundheddk_doctoraccess.outputs.description) }},
+                "url": ${{ toJSON(on.sundheddk_doctoraccess.outputs.url) }}
+              }]
+            }
