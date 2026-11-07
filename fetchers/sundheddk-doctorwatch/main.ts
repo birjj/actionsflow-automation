@@ -62,7 +62,7 @@ async function getDoctorsPracticeInfo(practiceId: number, log: FetcherContext<un
     return {
         id: data.Identifier,
         name: data.Navn,
-        openForPatients: data.AabenForTilgang,
+        openForPatients: true,
         doctors: data.Personale.map(doctor => ({ name: doctor.Navn }))
     }
 }

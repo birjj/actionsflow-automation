@@ -36,5 +36,6 @@ jobs:
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK }}
           events-file: ${{ steps.poll.outputs.events-file }}
+          username: "sundhed.dk doctor watch"
           titleTemplate: "🩺 {{title}} changed"
-          descriptionTemplate: "{{changes.summary}}"
+          descriptionTemplate: "{{summary}}"
