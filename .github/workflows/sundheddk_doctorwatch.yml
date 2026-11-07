@@ -6,14 +6,14 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: sundheddk_doctorwatch
+  group: sundheddk-doctorwatch
   cancel-in-progress: false
 
 permissions:
   contents: read
 
 env:
-  FETCHER: sundheddk_doctorwatch
+  FETCHER: sundheddk-doctorwatch
 
 jobs:
   watch:
