@@ -1,0 +1,45 @@
+name: Notify Discord
+description: Post each event to a Discord webhook. Does nothing when there are no events.
+
+inputs:
+  webhook:
+    description: Discord webhook URL (pass a secret).
+    required: true
+  events-file:
+    description: Path to the events JSON (the `events-file` output of the poll action).
+    required: true
+  titleTemplate:
+    description: >
+      Title template using {{field}} lookups, e.g. "🐱 {{title}} {{url}}" or
+      "{{id}}: {{changes.0.from}} → {{changes.0.to}}". Empty = a sensible default per event type.
+    default: ''
+  descriptionTemplate:
+    description: >
+      Description template using {{field}} lookups, e.g. "🐱 {{title}} {{url}}" or
+      "{{id}}: {{changes.0.from}} → {{changes.0.to}}". Empty = a sensible default per event type.
+    default: ''
+  username:
+    description: Override the webhook's display name.
+    default: ''
+  max-messages:
+    description: Send at most this many messages, then one "...and N more" line.
+    default: '10'
+  node-version:
+    description: Node version (must be >= 22.18 or 24+ for TypeScript type-stripping).
+    default: '24'
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      with:
+        node-version: ${{ inputs.node-version }}
+    - shell: bash
+      env:
+        DISCORD_WEBHOOK: ${{ inputs.webhook }}
+        EVENTS_FILE: ${{ inputs.events-file }}
+        TITLE_TEMPLATE: ${{ inputs.titleTemplate }}
+        DESCRIPTION_TEMPLATE: ${{ inputs.descriptionTemplate }}
+        USERNAME: ${{ inputs.username }}
+        MAX_MESSAGES: ${{ inputs.max-messages }}
+      run: node "${{ github.action_path }}/../../../reactions/discord.ts"

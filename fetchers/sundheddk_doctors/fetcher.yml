@@ -1,0 +1,9 @@
+name: sundheddk_doctors
+description: Fetches the state of one or more given doctor practices from sundhed.dk
+run: node main.ts
+inputs:
+  type: object
+  required: [ids]
+  properties:
+    ids: { type: array, items: { type: integer } }
+ignore: [fetched_at, checked_at]
