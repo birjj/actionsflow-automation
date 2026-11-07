@@ -1,0 +1,40 @@
+name: service-watch
+
+on:
+  schedule:
+    - cron: "0 8 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: sundheddk_doctorwatch
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  FETCHER: sundheddk_doctorwatch
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - id: poll
+        uses: ./.github/actions/poll
+        with:
+          key: ${{ env.FETCHER }}
+          fetcher: ${{ env.FETCHER }}
+          input: |
+            ids: [2756]
+          watch-added: false
+          watch-changed: "*"
+
+      - uses: ./.github/actions/notify-discord
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          events-file: ${{ steps.poll.outputs.events-file }}
+          titleTemplate: "🩺 {{title}} changed"
+          descriptionTemplate: "{{changes.0.from}} → {{changes.0.to}}"

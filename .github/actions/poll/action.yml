@@ -1,0 +1,113 @@
+name: Poll
+description: >
+  Run a fetcher, diff its snapshot against the state cached from the previous run, and
+  expose the resulting events. State advances only if the whole job succeeds.
+
+inputs:
+  key:
+    description: State namespace, [a-z0-9-]+. Explicit so renaming a workflow never loses state.
+    required: true
+  fetcher:
+    description: Name of a directory under `fetchers-dir`.
+    required: true
+  input:
+    description: Input for the fetcher, as YAML (a simple subset) or JSON.
+    default: '{}'
+  fetchers-dir:
+    description: Where fetchers live, relative to the workspace.
+    default: fetchers
+  watch-added:
+    description: Emit `added` events.
+    default: 'true'
+  watch-removed:
+    description: Emit `removed` events (suppressed when the fetcher reports an incomplete snapshot).
+    default: 'false'
+  watch-changed:
+    description: Comma/newline separated data paths to watch for changes, or `*` for any change.
+    default: ''
+  ignore:
+    description: Extra data paths that never count as changes (added to the fetcher's own `ignore`).
+    default: ''
+  first-run:
+    description: "`baseline` records state and emits nothing; `emit` reports everything as new."
+    default: baseline
+  dry-run:
+    description: Compute events but do not advance state.
+    default: 'false'
+  timeout-seconds:
+    description: Kill the fetcher after this long.
+    default: '300'
+  node-version:
+    description: >
+      Node version used to run the engine and the fetchers. Must be >= 22.18 (or 24+), where
+      TypeScript type-stripping is on by default.
+    default: '24'
+
+outputs:
+  has-events:
+    description: "'true' if there is at least one event."
+    value: ${{ steps.poll.outputs.has-events }}
+  count:
+    description: Number of events.
+    value: ${{ steps.poll.outputs.count }}
+  events-file:
+    description: Path to a JSON file containing the events array. Prefer this over `events`.
+    value: ${{ steps.poll.outputs.events-file }}
+  events:
+    description: Events as inline JSON (empty string if larger than ~200 KB). Treat as untrusted data.
+    value: ${{ steps.poll.outputs.events }}
+  is-baseline:
+    description: "'true' when no previous state existed (first run, or the cache was evicted)."
+    value: ${{ steps.poll.outputs.is-baseline }}
+  complete:
+    description: "'false' if the fetcher reported an incomplete snapshot."
+    value: ${{ steps.poll.outputs.complete }}
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: Validate key
+      shell: bash
+      env:
+        KEY: ${{ inputs.key }}
+      run: |
+        if [[ ! "$KEY" =~ ^[a-z0-9-]+$ ]]; then
+          echo "::error::key must match [a-z0-9-]+ (got '$KEY')"
+          exit 1
+        fi
+
+    # actions/cache restores the newest entry matching the prefix, and its post step saves a
+    # NEW entry (unique key per run) at the end of the job, but only if the job succeeded.
+    # That is what gives at-least-once delivery: if a later reaction step fails, state is
+    # not advanced and the events are reported again on the next run.
+    # The "__" delimiter keeps key "cats" from matching key "cats-2".
+    - name: Restore state
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ github.workspace }}/.watch-state/${{ inputs.key }}
+        key: watch-state__${{ inputs.key }}__${{ github.run_id }}-${{ github.run_attempt }}
+        restore-keys: |
+          watch-state__${{ inputs.key }}__
+
+    - name: Fetch and diff
+      id: poll
+      shell: bash
+      env:
+        # Inputs travel via env, never interpolated into the script text.
+        WATCH_KEY: ${{ inputs.key }}
+        WATCH_FETCHER: ${{ inputs.fetcher }}
+        WATCH_INPUT: ${{ inputs.input }}
+        WATCH_FETCHERS_DIR: ${{ github.workspace }}/${{ inputs.fetchers-dir }}
+        WATCH_STATE_DIR: ${{ github.workspace }}/.watch-state/${{ inputs.key }}
+        WATCH_WATCH_ADDED: ${{ inputs.watch-added }}
+        WATCH_WATCH_REMOVED: ${{ inputs.watch-removed }}
+        WATCH_WATCH_CHANGED: ${{ inputs.watch-changed }}
+        WATCH_IGNORE: ${{ inputs.ignore }}
+        WATCH_FIRST_RUN: ${{ inputs.first-run }}
+        WATCH_DRY_RUN: ${{ inputs.dry-run }}
+        WATCH_TIMEOUT_SECONDS: ${{ inputs.timeout-seconds }}
+      run: node "${{ github.action_path }}/../../../engine/cli.ts" poll
