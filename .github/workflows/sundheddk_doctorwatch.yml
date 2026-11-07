@@ -37,4 +37,4 @@ jobs:
           webhook: ${{ secrets.DISCORD_WEBHOOK }}
           events-file: ${{ steps.poll.outputs.events-file }}
           titleTemplate: "🩺 {{title}} changed"
-          descriptionTemplate: "{{changes.0.from}} → {{changes.0.to}}"
+          descriptionTemplate: "{{changes.summary}}"
